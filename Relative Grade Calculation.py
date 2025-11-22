@@ -1,0 +1,337 @@
+import os
+import tkinter as tk
+import tkinter.font as tkfont
+from tkinter import messagebox, filedialog
+from tkinterdnd2 import TkinterDnD, DND_FILES
+from openpyxl import load_workbook, Workbook
+
+# ====================== ENABLE 4K DPI ======================
+try:
+    if os.name == "nt":
+        from ctypes import windll
+        windll.shcore.SetProcessDpiAwareness(1)
+except:
+    pass
+
+# ====================== COLORS (PREMIUM) ======================
+BG_MAIN      = "#E9EEF4"
+CARD_BG      = "#FFFFFF"
+PRIMARY      = "#1D8F8A"
+PRIMARY_DARK = "#167A75"
+ACCENT       = "#DDAA3B"
+ACCENT_DARK  = "#C3902C"
+TEXT_MAIN    = "#16323A"
+SUBTEXT      = "#61727C"
+PASS_GREEN   = "#2F9E6E"
+FAIL_RED     = "#D64545"
+
+# ====================== MAIN ROOT FIRST ======================
+root = TkinterDnD.Tk()
+root.title("Grade Calculation")
+root.configure(bg=BG_MAIN)
+root.geometry("880x520")
+root.minsize(780, 460)
+root.eval("tk::PlaceWindow . center")
+
+# ====================== NOW SAFE TO DETECT FONTS ======================
+if "Poppins" in tkfont.families():
+    TITLE_FONT = ("Poppins", 18, "bold")
+    SUB_FONT   = ("Poppins", 12)
+    BTN_FONT   = ("Poppins", 12, "bold")
+    LABEL_FONT = ("Poppins", 11)
+else:
+    TITLE_FONT = ("Segoe UI", 18, "bold")
+    SUB_FONT   = ("Segoe UI", 12)
+    BTN_FONT   = ("Segoe UI", 12, "bold")
+    LABEL_FONT = ("Segoe UI", 11)
+
+# ====================== GLOBALS ======================
+ws = None
+wb = None
+subjects = []
+marks_per_subject = []
+student_rows = {}
+limit_S = limit_A = limit_B = limit_C = limit_D = 0
+total_students = 0
+max_row = 0
+max_col = 0
+
+# ====================== HELPERS ======================
+def safe_int(v):
+    try:
+        return int(v)
+    except:
+        return 0
+
+
+def pcount(total, percent):
+    x = (total * percent) / 100
+    i = int(x)
+    return i + 1 if x > i else i
+
+
+# ====================== TEMPLATE CREATION ======================
+def create_template():
+    wb_temp = Workbook()
+    s = wb_temp.active
+    s["A1"] = "Reg No"
+    s["B1"] = "Subject 1"
+    s["C1"] = "Subject 2"
+    s["D1"] = "Subject 3"
+    s["E1"] = "Subject 4"
+
+    file = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                        filetypes=[("Excel", "*.xlsx")])
+    if file:
+        wb_temp.save(file)
+        messagebox.showinfo("Saved", "Template created successfully.")
+
+
+# ====================== LOAD EXCEL ======================
+def prepare_from_file(path):
+    global wb, ws, max_row, max_col, subjects
+    global marks_per_subject, student_rows
+    global total_students, limit_S, limit_A, limit_B, limit_C, limit_D
+
+    if not path:
+        return False
+
+    try:
+        wb = load_workbook(path, data_only=True)
+        ws = wb.active
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not open Excel:\n{e}")
+        return False
+
+    max_row = ws.max_row
+    max_col = ws.max_column
+
+    subjects = [ws.cell(row=1, column=c).value for c in range(2, max_col+1)]
+    total_students = max_row - 1
+
+    if total_students <= 0:
+        messagebox.showerror("Error", "No student rows in Excel.")
+        return False
+
+    limit_S = pcount(total_students, 2)
+    limit_A = pcount(total_students, 12)
+    limit_B = pcount(total_students, 32)
+    limit_C = pcount(total_students, 52)
+    limit_D = pcount(total_students, 72)
+
+    marks_per_subject = []
+    for i in range(len(subjects)):
+        arr = []
+        for r in range(2, max_row+1):
+            arr.append(safe_int(ws.cell(row=r, column=i+2).value))
+        marks_per_subject.append(arr)
+
+    student_rows = {
+        str(ws.cell(row=r, column=1).value): r
+        for r in range(2, max_row+1)
+    }
+
+    reg_entry.config(state="normal")
+    btn_show.config(state="normal")
+    lbl_status.config(text="File Loaded ✓", fg=PRIMARY)
+
+    return True
+
+
+# ====================== DRAG & DROP ======================
+def drop_file(event):
+    path = event.data.strip("{}")
+    if path.lower().endswith(".xlsx"):
+        prepare_from_file(path)
+    else:
+        messagebox.showerror("Invalid", "Please drop a valid .xlsx file.")
+
+
+# ====================== ROUNDED BUTTON CLASS ======================
+class RoundedButton(tk.Canvas):
+    def __init__(self, parent, text, bg_color, hover_color,
+                 width=180, height=46, command=None):
+        super().__init__(parent, width=width, height=height,
+                         bg=parent["bg"], highlightthickness=0, bd=0)
+
+        self.bg = bg_color
+        self.hover = hover_color
+        self.command = command
+        self.width = width
+        self.height = height
+        self.r = height // 2
+
+        self.rect = self.draw_rounded(2, 2, width-2, height-2, self.r,
+                                      fill=self.bg)
+        self.text_obj = self.create_text(width//2, height//2,
+                                         text=text, fill="white",
+                                         font=BTN_FONT)
+
+        self.bind_events()
+
+    def draw_rounded(self, x1, y1, x2, y2, r, **kw):
+        points = [
+            x1+r, y1, x2-r, y1,
+            x2, y1, x2, y1+r,
+            x2, y2-r, x2, y2,
+            x2-r, y2, x1+r, y2,
+            x1, y2, x1, y2-r,
+            x1, y1+r, x1, y1
+        ]
+        return self.create_polygon(points, smooth=True, **kw)
+
+    def bind_events(self):
+        self.tag_bind(self.rect, "<Enter>", self.on_enter)
+        self.tag_bind(self.text_obj, "<Enter>", self.on_enter)
+        self.tag_bind(self.rect, "<Leave>", self.on_leave)
+        self.tag_bind(self.text_obj, "<Leave>", self.on_leave)
+        self.tag_bind(self.rect, "<Button-1>", self.on_click)
+        self.tag_bind(self.text_obj, "<Button-1>", self.on_click)
+
+    def on_enter(self, e):
+        self.itemconfig(self.rect, fill=self.hover)
+
+    def on_leave(self, e):
+        self.itemconfig(self.rect, fill=self.bg)
+
+    def on_click(self, e):
+        if self.command:
+            self.command()
+
+
+# ====================== RESULT ======================
+def show_result():
+    if ws is None:
+        messagebox.showwarning("Error", "Upload Excel first.")
+        return
+
+    reg = reg_entry.get().strip()
+    if not reg:
+        messagebox.showwarning("Input", "Enter Registration Number.")
+        return
+
+    row = student_rows.get(reg)
+    if row is None:
+        messagebox.showerror("Not Found", "Reg No not in Excel.")
+        return
+
+    win = tk.Toplevel(root)
+    win.title("Result")
+    win.configure(bg=BG_MAIN)
+    win.geometry("760x460")
+
+    shadow = tk.Frame(win, bg="#d6dbe0")
+    shadow.place(x=18, y=18, width=724, height=404)
+
+    card = tk.Frame(win, bg=CARD_BG)
+    card.place(x=10, y=10, width=724, height=404)
+
+    tk.Label(card, text="Grade Calculation", bg=CARD_BG,
+             fg=TEXT_MAIN, font=TITLE_FONT).pack(pady=(16, 4))
+
+    tk.Label(card, text=f"Reg No: {reg}", bg=CARD_BG,
+             fg=SUBTEXT, font=SUB_FONT).pack(pady=(0, 10))
+
+    table = tk.Frame(card, bg=CARD_BG)
+    table.pack(padx=24, pady=8)
+
+    headers = ["Subject", "Marks", "Grade", "Status"]
+    for i, h in enumerate(headers):
+        tk.Label(table, text=h, bg=CARD_BG, fg=PRIMARY,
+                 font=("Segoe UI", 11, "bold")).grid(row=0, column=i, padx=16)
+
+    # Fill table rows
+    for i, sub in enumerate(subjects, start=1):
+        mark = safe_int(ws.cell(row=row, column=i+1).value)
+
+        if mark < 40:
+            grade = "F"
+            status = "FAIL"
+            color = FAIL_RED
+        else:
+            arr = sorted(marks_per_subject[i-1], reverse=True)
+            rank = arr.index(mark) + 1
+
+            if rank <= limit_S: grade="S"
+            elif rank <= limit_A: grade="A"
+            elif rank <= limit_B: grade="B"
+            elif rank <= limit_C: grade="C"
+            elif rank <= limit_D: grade="D"
+            else: grade="E"
+
+            status = "PASS"
+            color = PASS_GREEN
+
+        tk.Label(table, text=sub, bg=CARD_BG, fg=TEXT_MAIN,
+                 font=LABEL_FONT).grid(row=i, column=0, padx=16, pady=6, sticky="w")
+        tk.Label(table, text=mark, bg=CARD_BG, fg=TEXT_MAIN,
+                 font=LABEL_FONT).grid(row=i, column=1, padx=16)
+        tk.Label(table, text=grade, bg=CARD_BG, fg=color,
+                 font=("Segoe UI", 11, "bold")).grid(row=i, column=2, padx=16)
+        tk.Label(table, text=status, bg=CARD_BG, fg=color,
+                 font=("Segoe UI", 11, "bold")).grid(row=i, column=3, padx=16)
+
+    RoundedButton(card, "Close", ACCENT, ACCENT_DARK,
+                  width=140, height=44,
+                  command=win.destroy).pack(pady=16)
+
+
+# ====================== MAIN CARD UI ======================
+shadow_main = tk.Frame(root, bg="#d6dbe0")
+shadow_main.place(x=30, y=30, width=820, height=440)
+
+card_main = tk.Frame(root, bg=CARD_BG)
+card_main.place(x=20, y=20, width=820, height=420)
+
+tk.Label(card_main, text="Grade Calculation", bg=CARD_BG,
+         fg=TEXT_MAIN, font=TITLE_FONT).pack(pady=(26, 6))
+
+tk.Label(card_main, text="Upload Excel OR Drag & Drop anywhere",
+         bg=CARD_BG, fg=SUBTEXT, font=SUB_FONT).pack()
+
+btn_row = tk.Frame(card_main, bg=CARD_BG)
+btn_row.pack(pady=20)
+
+def on_upload():
+    f = filedialog.askopenfilename(filetypes=[("Excel", "*.xlsx")])
+    if f:
+        prepare_from_file(f)
+
+RoundedButton(btn_row, "Upload Excel File",
+              PRIMARY, PRIMARY_DARK,
+              width=200, height=48,
+              command=on_upload).pack(side="left", padx=12)
+
+RoundedButton(btn_row, "Download Template",
+              ACCENT, ACCENT_DARK,
+              width=200, height=48,
+              command=create_template).pack(side="left", padx=12)
+
+lbl_status = tk.Label(card_main, text="No file loaded",
+                      bg=CARD_BG, fg=SUBTEXT, font=SUB_FONT)
+lbl_status.pack()
+
+reg_frame = tk.Frame(card_main, bg=CARD_BG)
+reg_frame.pack(pady=10)
+
+tk.Label(reg_frame, text="Reg No.:", bg=CARD_BG,
+         fg=TEXT_MAIN, font=LABEL_FONT).pack(side="left", padx=8)
+
+reg_entry = tk.Entry(reg_frame, font=LABEL_FONT, width=26,
+                     state="disabled", relief="solid", bd=1)
+reg_entry.pack(side="left")
+
+btn_show = RoundedButton(card_main, "Show Result",
+                         PRIMARY, PRIMARY_DARK,
+                         width=220, height=50,
+                         command=show_result)
+btn_show.pack(pady=18)
+
+root.drop_target_register(DND_FILES)
+root.dnd_bind("<<Drop>>", drop_file)
+
+tk.Label(card_main,
+         text="Upload class Excel (Reg No | Subject1..N)",
+         bg=CARD_BG, fg=SUBTEXT, font=("Segoe UI", 9)).pack(side="bottom", pady=14)
+
+root.mainloop()
