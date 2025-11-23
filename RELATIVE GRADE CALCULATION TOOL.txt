@@ -157,7 +157,7 @@ Commercial or paid use requires permission.
 Contact Information:
 --------------------
 Developer: Avin  
-Email: (Your email here)  
+Email: avin.25bsa10028@vitbhopal.ac.in  
 
 Feel free to reach out for modifications, improvements, or feedback.
 
@@ -173,3 +173,4 @@ Additional Notes:
 ------------------------------------------------------------
 End of README (Relative Grading Version)
 ------------------------------------------------------------
+
