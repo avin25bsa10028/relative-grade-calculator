@@ -1,2 +1,175 @@
-# relative-grade-calculator
-A user-friendly application that allows teachers to upload class Excel sheets and generate subject-wise relative grades instantly.
+------------------------------------------------------------
+                RELATIVE GRADE CALCULATION SYSTEM
+------------------------------------------------------------
+
+Project Title:
+--------------
+Relative Grade Calculation System – Excel-Based Student Evaluation Tool
+
+
+Introduction:
+--------------
+This project implements a fully automated **Relative Grade Calculation System** 
+designed for teachers. Instead of using fixed cut-off marks, this system evaluates 
+every student’s subject performance relative to the entire class.
+
+In relative grading, a student's grade depends on how well they perform compared 
+to their classmates, not just their raw score. This ensures fairness, balanced 
+distribution, and statistical accuracy.
+
+The system reads marks from an Excel file and immediately displays:
+• Subject-wise marks  
+• Relative grades (S, A, B, C, D, E)  
+• Absolute fail detection (<40 = F)  
+• Clean and organized result view  
+• Fast and error-free grade generation  
+
+
+Motivation:
+-----------
+Manual grading becomes difficult and time-consuming when handling large classes.  
+Teachers often face problems like:
+
+• Inconsistent grading  
+• Time-consuming calculations  
+• Human errors  
+• Difficulty deciding grade boundaries  
+
+Relative grading solves these issues because it:
+• Compares every student fairly  
+• Distributes grades logically  
+• Rewards actual top performers  
+• Ensures class-level fairness  
+
+This tool automates the entire relative grading workflow using a modern GUI that 
+any teacher can operate easily.
+
+
+Data Description:
+-----------------
+The system uses a simple Excel (.xlsx) file as input.
+
+Required Format:
+----------------
+Column 1  → Registration Number  
+Column 2  → Subject 1 Marks  
+Column 3  → Subject 2 Marks  
+...continue for all subjects...
+
+Example Template:
+-----------------
+Reg No | Subject 1 | Subject 2 | Subject 3 | Subject 4  
+101    |    82     |     75    |     90    |     87  
+102    |    50     |     48    |     41    |     60  
+
+Each row represents a student.  
+Each column after “Reg No” represents that subject’s marks.
+
+
+How the System Processes the Data:
+----------------------------------
+After uploading an Excel file:
+
+1. All subject names are read dynamically  
+2. All marks are converted safely (empty/invalid cells treated as 0)  
+3. Each subject is graded separately using **relative grading**  
+4. The system computes percentile groups  
+5. Each student’s score is compared with the whole class  
+6. Grades are assigned based on ranking, not fixed marks  
+
+
+Relative Grading Criteria (Detailed):
+-------------------------------------
+Relative grading does not use absolute cut-offs (like 90+ = A).  
+Instead, it ranks students within the class and assigns grades accordingly:
+
+**S Grade → Top 2% performers**  
+**A Grade → Next 10% performers**  
+**B Grade → Next 20% performers**  
+**C Grade → Next 20% performers**  
+**D Grade → Next 20% performers**  
+**E Grade → Remaining students**  
+
+These categories ensure grades fall into a statistically distributed curve.
+
+Important Rule:
+---------------
+Regardless of ranking,
+**If a student scores below 40 in any subject → Grade = F (Fail).**
+
+This means:
+Relative grading = applied only if mark ≥ 40  
+Absolute fail = mark < 40  
+
+
+Why Relative Grading?
+---------------------
+• Better reflects actual performance  
+• Removes the pressure of fixed cut-off marks  
+• Highlights true toppers  
+• Prevents grade inflation  
+• Makes grading fair even if the exam was too hard or too easy  
+
+
+How to Use This Application:
+----------------------------
+1. Run the Python program:  
+   `grade_calc_premium.py`
+
+2. Upload the Excel file OR drag & drop it onto the window.
+
+3. Wait for “File Loaded ✓” message.
+
+4. Enter any student's Registration Number.
+
+5. Click “Show Result” to view:
+   • Subject-wise marks  
+   • Relative grade  
+   • Pass/Fail status  
+
+(Optional)  
+Use “Download Template” to generate a ready-made Excel format.
+
+
+Installation Requirements:
+--------------------------
+Install dependencies using:
+
+pip install openpyxl  
+pip install pillow  
+pip install tkinterdnd2  
+
+Python Version:  
+Python 3.10+ recommended for best UI performance.
+
+
+License:
+--------
+This project is free to use for:
+✓ Education  
+✓ Academic submissions  
+✓ Personal learning  
+✓ Classroom usage  
+
+Commercial or paid use requires permission.
+
+
+Contact Information:
+--------------------
+Developer: Avin  
+Email: avin.25bsa10028@vitbhopal.ac.in  
+
+Feel free to reach out for modifications, improvements, or feedback.
+
+
+Additional Notes:
+-----------------
+• Works with any number of subjects  
+• Pure relative grading across every subject  
+• Excel file is only read, never modified  
+• Optimized for Windows with 4K DPI support  
+• Modern interface with drag-and-drop support  
+
+------------------------------------------------------------
+End of README (Relative Grading Version)
+------------------------------------------------------------
